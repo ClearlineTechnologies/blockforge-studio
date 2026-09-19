@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.data/
+toolchain/
+test-results/
+*.log
+runtime/
+sdk/
+release/
+*.exe
+*.dll
+*.pdb
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.local

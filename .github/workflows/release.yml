@@ -1,0 +1,42 @@
+name: Publish Windows release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  windows-release:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - shell: pwsh
+        run: ./scripts/setup-toolchain.ps1
+      - run: npm run build
+      - run: npm test
+      - run: npm run launcher
+      - shell: pwsh
+        run: ./scripts/test-browser.ps1
+      - shell: pwsh
+        run: ./scripts/bundle-npm.ps1
+      - run: npm run package:windows
+      - name: Publish permanent downloadable assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($env:RELEASE_TAG -ne "v$version") { throw 'Tag and package version must match.' }
+          gh release create $env:RELEASE_TAG "release/BlockForge-$version-win-x64.zip" release/SHA256SUMS.txt --title "BlockForge Studio $version" --notes-file RELEASE_NOTES.md --verify-tag --latest
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }
