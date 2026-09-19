@@ -38,5 +38,8 @@ jobs:
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
           if ($env:RELEASE_TAG -ne "v$version") { throw 'Tag and package version must match.' }
+          gh release view $env:RELEASE_TAG --json tagName 2>$null
+          if ($LASTEXITCODE -eq 0) { Write-Host 'This release already exists; preserving its published assets.'; exit 0 }
           gh release create $env:RELEASE_TAG "release/BlockForge-$version-win-x64.zip" release/SHA256SUMS.txt --title "BlockForge Studio $version" --notes-file RELEASE_NOTES.md --verify-tag --latest
           if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }
+
