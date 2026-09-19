@@ -41,7 +41,15 @@ const files = [
   "Rebuild-BlockForge.cmd",
 ];
 for (const name of directories)
-  await fs.cp(path.join(root, name), path.join(app, name), { recursive: true });
+  await fs.cp(path.join(root, name), path.join(app, name), {
+    recursive: true,
+    filter: (source) => {
+      const relative = path.relative(root, source).split(path.sep);
+      return !relative.some((part) =>
+        [".vite", ".vite-temp", ".cache"].includes(part),
+      );
+    },
+  });
 await fs.mkdir(path.join(app, "runtime"), { recursive: true });
 await fs.copyFile(
   path.join(root, "runtime/node.exe"),
@@ -97,3 +105,4 @@ console.log(
     stage,
   }),
 );
+
